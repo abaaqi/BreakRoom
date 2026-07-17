@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Breakroom Live — Buzzer Mode</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=Archivo+Black&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --paper: #F6F5F0;
+  --ink: #1D2433;
+  --sun: #FFD23F;
+  --coral: #FF6B5E;
+  --mint: #35C98E;
+  --violet: #9C88FF;
+  --cobalt: #2E5BFF;
+}
+* { box-sizing: border-box; margin: 0; }
+body {
+  background:
+    radial-gradient(circle at 8px 8px, rgba(29,36,51,0.06) 1.5px, transparent 1.5px) 0 0 / 32px 32px,
+    var(--paper);
+  color: var(--ink);
+  font-family: 'Archivo', system-ui, sans-serif;
+  min-height: 100vh;
+}
+.topbar { display: flex; align-items: baseline; justify-content: space-between; padding: 20px 24px; max-width: 960px; margin: 0 auto; }
+.wordmark { font-family: 'Archivo Black', sans-serif; font-size: 22px; letter-spacing: 1px; background: none; border: none; color: var(--ink); cursor: pointer; padding: 0; }
+.wordmark .hl { background: var(--sun); padding: 0 4px; }
+.topbar-note { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: rgba(29,36,51,0.55); }
+
+.stage { max-width: 760px; margin: 0 auto; padding: 8px 24px 64px; display: flex; flex-direction: column; gap: 20px; align-items: center; text-align: center; }
+.stage.left { align-items: stretch; text-align: left; }
+
+.eyebrow {
+  display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase; background: var(--sun);
+  border: 2px solid var(--ink); border-radius: 4px; padding: 4px 10px; box-shadow: 3px 3px 0 var(--ink);
+}
+.title { font-family: 'Archivo Black', sans-serif; font-size: clamp(26px, 5vw, 42px); line-height: 1.1; }
+.blurb { font-size: 16px; line-height: 1.55; color: rgba(29,36,51,0.85); max-width: 520px; }
+.muted { color: rgba(29,36,51,0.55); font-size: 14px; }
+
+.card { width: 100%; background: #fff; border: 2px solid var(--ink); border-radius: 12px; padding: 18px; box-shadow: 5px 5px 0 var(--ink); }
+.field-label { font-weight: 700; margin-bottom: 10px; text-align: left; }
+
+input {
+  width: 100%; font: inherit; font-size: 18px; color: var(--ink);
+  border: 2px solid var(--ink); border-radius: 8px; padding: 12px 14px; background: var(--paper);
+}
+input.code { font-family: 'IBM Plex Mono', monospace; font-size: 26px; letter-spacing: 8px; text-transform: uppercase; text-align: center; }
+input:focus-visible, button:focus-visible { outline: 3px solid var(--cobalt); outline-offset: 2px; }
+
+.btn {
+  font: inherit; font-weight: 700; font-size: 16px; cursor: pointer;
+  background: #fff; color: var(--ink); border: 2px solid var(--ink); border-radius: 10px;
+  padding: 14px 22px; box-shadow: 4px 4px 0 var(--ink);
+  transition: transform 100ms ease, box-shadow 100ms ease;
+}
+.btn:hover:not(:disabled) { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 var(--ink); }
+.btn:active:not(:disabled) { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: 2px 2px 0 var(--ink); }
+.btn.primary { background: var(--cobalt); color: #fff; }
+.btn.wide { width: 100%; max-width: 480px; }
+.btn-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.backlink { background: none; border: none; font: inherit; font-weight: 700; color: var(--ink); cursor: pointer; padding: 0; align-self: flex-start; }
+
+.role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; width: 100%; }
+@media (max-width: 560px) { .role-grid { grid-template-columns: 1fr; } }
+.role-card {
+  font: inherit; color: var(--ink); text-align: left; cursor: pointer;
+  display: flex; flex-direction: column; gap: 8px;
+  background: #fff; border: 2px solid var(--ink); border-radius: 12px; padding: 22px;
+  box-shadow: 5px 5px 0 var(--ink); transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.role-card:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 var(--ink); }
+.role-name { font-family: 'Archivo Black', sans-serif; font-size: 22px; }
+.role-desc { font-size: 14px; line-height: 1.5; color: rgba(29,36,51,0.85); }
+
+.pack-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.pack {
+  font: inherit; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 4px;
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 10px; padding: 12px; color: var(--ink);
+}
+.pack span { font-size: 12px; color: rgba(29,36,51,0.65); }
+.pack.on { background: var(--sun); box-shadow: 3px 3px 0 var(--ink); }
+
+.roomcode {
+  font-family: 'IBM Plex Mono', monospace; font-weight: 700;
+  font-size: clamp(48px, 12vw, 84px); letter-spacing: 16px; padding-left: 16px;
+  background: #fff; border: 2px solid var(--ink); border-radius: 14px;
+  padding: 16px 20px 16px 36px; box-shadow: 6px 6px 0 var(--ink); transform: rotate(-1deg);
+}
+.join-url { font-family: 'IBM Plex Mono', monospace; font-size: 14px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.chip { font-size: 15px; font-weight: 600; background: #fff; border: 2px solid var(--ink); border-radius: 999px; padding: 8px 14px; }
+.chip.you { background: var(--mint); }
+
+.quiz-meta { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+.timer-num { font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 22px; }
+.timer-track { width: 100%; height: 14px; border: 2px solid var(--ink); border-radius: 999px; background: #fff; overflow: hidden; }
+.timer-fill { height: 100%; background: var(--sun); transition: width 200ms linear; }
+
+.question { font-family: 'Archivo Black', sans-serif; font-size: clamp(22px, 4vw, 34px); line-height: 1.25; }
+
+.sticky-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; }
+@media (max-width: 560px) { .sticky-grid { grid-template-columns: 1fr; } }
+.sticky {
+  font: inherit; font-weight: 700; font-size: 17px; text-align: left; cursor: pointer;
+  display: flex; align-items: center; gap: 12px;
+  border: 2px solid var(--ink); border-radius: 4px; padding: 18px 16px; min-height: 84px; color: var(--ink);
+  box-shadow: 5px 6px 0 rgba(29,36,51,0.9);
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+.sticky:hover:not(:disabled) { transform: translate(-2px,-2px) scale(1.02); }
+.sticky:disabled { cursor: default; }
+.sticky.right { outline: 4px solid var(--ink); }
+.sticky.dim { opacity: 0.35; }
+.sticky.picked { outline: 4px solid var(--ink); }
+.sticky-sym { font-size: 14px; border: 2px solid var(--ink); border-radius: 6px; background: rgba(255,255,255,0.6); width: 30px; height: 30px; display: grid; place-items: center; flex-shrink: 0; }
+
+.dist { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.dist-row { display: flex; align-items: center; gap: 10px; }
+.dist-bar { height: 30px; border: 2px solid var(--ink); border-radius: 6px; min-width: 34px; display: flex; align-items: center; justify-content: flex-end; padding: 0 8px; font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 14px; }
+.dist-label { flex: 1; text-align: left; font-size: 14px; font-weight: 600; }
+.dist-row.correct .dist-label::after { content: " ✓"; font-weight: 900; }
+
+.board { max-width: 480px; width: 100%; text-align: left; }
+.board-row { display: flex; align-items: center; gap: 12px; padding: 10px 8px; border-bottom: 2px dashed rgba(29,36,51,0.15); font-size: 16px; }
+.board-row:last-child { border-bottom: none; }
+.board-row.leader { background: var(--sun); border-radius: 8px; border-bottom: none; font-weight: 700; }
+.board-rank { font-family: 'IBM Plex Mono', monospace; font-weight: 700; width: 32px; text-align: center; }
+.board-name { flex: 1; }
+.board-pts { font-family: 'IBM Plex Mono', monospace; font-weight: 700; }
+
+.verdict { font-family: 'Archivo Black', sans-serif; font-size: 26px; }
+.verdict.good { color: #0E8A5F; }
+.verdict.bad { color: var(--coral); }
+.bigrank { font-family: 'Archivo Black', sans-serif; font-size: clamp(40px, 10vw, 64px); }
+.err { color: var(--coral); font-weight: 700; min-height: 20px; }
+.hidden { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <button class="wordmark" onclick="location.href='/'">BREAK<span class="hl">ROOM</span></button>
+  <span class="topbar-note">live · buzzer mode</span>
+</header>
+
+<main id="app" class="stage"></main>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+const app = document.getElementById("app");
+const SYMS = ["▲", "●", "■", "◆"];
+const COLORS = ["#FFE066", "#FF8A7A", "#7EE0B8", "#B7A6FF"];
+
+let state = {
+  view: "landing",       // landing | host-setup | host-lobby | host-question | host-results | host-podium
+                          // join | player-lobby | player-question | player-waiting | player-result | player-podium
+  role: null,
+  code: "",
+  packId: "office",
+  packName: "",
+  players: [],
+  name: "",
+  err: "",
+  question: null,         // { qi, total, q, options, time }
+  myAnswer: null,
+  progress: { answered: 0, players: 0 },
+  results: null,          // host: { correctIndex, counts, leaderboard }
+  myResult: null,         // player: { correct, gained, score, rank, players, answered }
+  podium: null,
+  timerEnd: 0,
+  questionTime: 20,
+};
+
+let timerInterval = null;
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function set(patch) { Object.assign(state, patch); render(); }
+
+/* ---------- socket events ---------- */
+socket.on("lobby:update", ({ players }) => set({ players }));
+
+socket.on("question:show", (q) => {
+  const base = { question: q, myAnswer: null, results: null, myResult: null, questionTime: q.time, timerEnd: Date.now() + q.time * 1000, progress: { answered: 0, players: state.players.length } };
+  if (state.role === "host") set({ ...base, view: "host-question" });
+  else set({ ...base, view: "player-question" });
+  startTimer();
+});
+
+socket.on("answers:progress", (p) => set({ progress: p }));
+
+socket.on("question:results", (r) => { stopTimer(); set({ results: r, view: "host-results" }); });
+
+socket.on("player:result", (r) => { stopTimer(); set({ myResult: r, view: "player-result" }); });
+
+socket.on("game:podium", (p) => { stopTimer(); set({ podium: p, view: state.role === "host" ? "host-podium" : "player-podium" }); });
+
+socket.on("room:closed", ({ reason }) => {
+  stopTimer();
+  alertBanner(reason || "The room was closed.");
+  set({ view: "landing", role: null, code: "", players: [] });
+});
+
+socket.on("disconnect", () => {
+  if (state.view !== "landing") alertBanner("Connection lost. Trying to reconnect…");
+});
+
+function alertBanner(msg) { state.err = msg; }
+
+/* ---------- timer ---------- */
+function startTimer() {
+  stopTimer();
+  timerInterval = setInterval(() => {
+    const el = document.getElementById("timer-fill");
+    const num = document.getElementById("timer-num");
+    const remaining = Math.max(0, state.timerEnd - Date.now());
+    if (el) el.style.width = (remaining / (state.questionTime * 1000)) * 100 + "%";
+    if (num) num.textContent = Math.ceil(remaining / 1000) + "s";
+    if (remaining <= 0) stopTimer();
+  }, 200);
+}
+function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+
+/* ---------- actions ---------- */
+function hostCreate() {
+  socket.emit("host:create", { packId: state.packId }, (res) => {
+    if (res?.ok) set({ role: "host", code: res.code, packName: res.packName, players: [], view: "host-lobby", err: "" });
+  });
+}
+
+function playerJoin() {
+  const code = document.getElementById("join-code").value;
+  const name = document.getElementById("join-name").value;
+  socket.emit("player:join", { code, name }, (res) => {
+    if (res?.ok) set({ role: "player", code: res.code, name: res.name, packName: res.packName, view: "player-lobby", err: "" });
+    else set({ err: res?.error || "Could not join." });
+  });
+}
+
+function hostStart() {
+  socket.emit("host:start", {}, (res) => { if (res && !res.ok) set({ err: res.error }); });
+}
+
+function answer(i) {
+  if (state.myAnswer !== null) return;
+  state.myAnswer = i;
+  render();
+  socket.emit("player:answer", { index: i }, () => {});
+}
+
+function hostNext() { socket.emit("host:next"); }
+
+/* ---------- views ---------- */
+const views = {
+  landing() {
+    return `
+      <a class="backlink" href="/" style="text-decoration:none">← All games</a>
+      <div class="eyebrow">Buzzer Mode</div>
+      <h1 class="title">One screen asks.<br/>Every phone answers.</h1>
+      <p class="blurb">The host puts the game on the big screen, everyone joins with a room code from their own device, and the fastest correct answers climb the board.</p>
+      <div class="role-grid">
+        <button class="role-card" onclick="set({view:'host-setup', err:''})">
+          <span class="role-name">🖥️ Host a game</span>
+          <span class="role-desc">Put this on the meeting-room screen or share it on the call. You'll get a room code for everyone to join.</span>
+        </button>
+        <button class="role-card" onclick="set({view:'join', err:''})">
+          <span class="role-name">📱 Join a game</span>
+          <span class="role-desc">Got a code from your host? Enter it here with your name and get ready to buzz.</span>
+        </button>
+      </div>`;
+  },
+
+  "host-setup"() {
+    const packs = [
+      { id: "office", name: "Watercooler Trivia", tag: "Office life & general knowledge" },
+      { id: "tech", name: "Tech & Tools", tag: "Software, shortcuts & internet lore" },
+      { id: "teasers", name: "Brain Teasers", tag: "Quick logic under pressure" },
+    ];
+    return `
+      <button class="backlink" onclick="set({view:'landing'})">← Back</button>
+      <div class="eyebrow">Host a game</div>
+      <div class="card">
+        <div class="field-label">Pick a question pack</div>
+        <div class="pack-row">
+          ${packs.map((p) => `
+            <button class="pack ${state.packId === p.id ? "on" : ""}" onclick="set({packId:'${p.id}'})">
+              <strong>${p.name}</strong><span>${p.tag}</span>
+            </button>`).join("")}
+        </div>
+      </div>
+      <button class="btn primary wide" onclick="hostCreate()">Create room →</button>`;
+  },
+
+  "host-lobby"() {
+    return `
+      <div class="eyebrow">${esc(state.packName)}</div>
+      <h1 class="title">Join at <span class="join-url">${esc(location.host)}</span></h1>
+      <p class="blurb">Tap “Join a game” and enter this code:</p>
+      <div class="roomcode">${state.code}</div>
+      <div class="card">
+        <div class="field-label">Players in the room (${state.players.length})</div>
+        <div class="chips">
+          ${state.players.length ? state.players.map((p) => `<span class="chip">${esc(p)}</span>`).join("") : '<span class="muted">Waiting for players…</span>'}
+        </div>
+      </div>
+      <p class="err">${esc(state.err)}</p>
+      <button class="btn primary wide" ${state.players.length ? "" : "disabled"} onclick="hostStart()">
+        ${state.players.length ? "Start the game →" : "Waiting for at least one player"}
+      </button>`;
+  },
+
+  "host-question"() {
+    const q = state.question;
+    return `
+      <div class="quiz-meta">
+        <span class="eyebrow">Q${q.qi + 1} of ${q.total}</span>
+        <span class="timer-num" id="timer-num">${q.time}s</span>
+      </div>
+      <div class="timer-track"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
+      <h1 class="question">${esc(q.q)}</h1>
+      <div class="sticky-grid">
+        ${q.options.map((o, i) => `
+          <div class="sticky" style="background:${COLORS[i]}; transform: rotate(${(i % 2 ? 1 : -1) * (1 + i * 0.4)}deg)">
+            <span class="sticky-sym">${SYMS[i]}</span>${esc(o)}
+          </div>`).join("")}
+      </div>
+      <p class="muted">${state.progress.answered} of ${state.progress.players} answered — answer on your phones!</p>`;
+  },
+
+  "host-results"() {
+    const q = state.question;
+    const r = state.results;
+    const max = Math.max(1, ...r.counts);
+    return `
+      <div class="eyebrow">Q${r.qi + 1} of ${r.total} — results</div>
+      <h1 class="question">${esc(q.q)}</h1>
+      <div class="dist">
+        ${q.options.map((o, i) => `
+          <div class="dist-row ${i === r.correctIndex ? "correct" : ""}">
+            <span class="sticky-sym" style="background:${COLORS[i]}">${SYMS[i]}</span>
+            <span class="dist-label">${esc(o)}</span>
+            <div class="dist-bar" style="background:${COLORS[i]}; width:${(r.counts[i] / max) * 60 + 10}%">${r.counts[i]}</div>
+          </div>`).join("")}
+      </div>
+      <div class="card board">
+        <div class="field-label">Leaderboard</div>
+        ${r.leaderboard.slice(0, 8).map((p, i) => `
+          <div class="board-row ${i === 0 ? "leader" : ""}">
+            <span class="board-rank">${i + 1}</span><span class="board-name">${esc(p.name)}</span><span class="board-pts">${p.score}</span>
+          </div>`).join("")}
+      </div>
+      <button class="btn primary wide" onclick="hostNext()">
+        ${r.qi + 1 < r.total ? "Next question →" : "Show the podium 🏆"}
+      </button>`;
+  },
+
+  "host-podium"() {
+    const medals = ["🥇", "🥈", "🥉"];
+    const board = state.podium.leaderboard;
+    return `
+      <div class="eyebrow">Final scores</div>
+      <h1 class="title">${board.length ? esc(board[0].name) + " takes it!" : "Game over"}</h1>
+      <div class="card board">
+        ${board.map((p, i) => `
+          <div class="board-row ${i === 0 ? "leader" : ""}">
+            <span class="board-rank">${medals[i] || i + 1}</span><span class="board-name">${esc(p.name)}</span><span class="board-pts">${p.score}</span>
+          </div>`).join("")}
+      </div>
+      <button class="btn primary wide" onclick="location.reload()">New game</button>`;
+  },
+
+  join() {
+    return `
+      <button class="backlink" onclick="set({view:'landing'})">← Back</button>
+      <div class="eyebrow">Join a game</div>
+      <div class="card">
+        <div class="field-label">Room code</div>
+        <input id="join-code" class="code" maxlength="4" placeholder="ABCD" autocomplete="off" />
+        <div class="field-label" style="margin-top:14px">Your name</div>
+        <input id="join-name" maxlength="20" placeholder="e.g. Amina" autocomplete="off" />
+      </div>
+      <p class="err">${esc(state.err)}</p>
+      <button class="btn primary wide" onclick="playerJoin()">Join room →</button>`;
+  },
+
+  "player-lobby"() {
+    return `
+      <div class="eyebrow">${esc(state.packName)}</div>
+      <h1 class="title">You're in, ${esc(state.name)}!</h1>
+      <div class="roomcode">${state.code}</div>
+      <p class="blurb">Watch the host screen. When the game starts, your answer buttons appear here. Fastest correct answers score the most.</p>`;
+  },
+
+  "player-question"() {
+    const q = state.question;
+    return `
+      <div class="quiz-meta">
+        <span class="eyebrow">Q${q.qi + 1} of ${q.total}</span>
+        <span class="timer-num" id="timer-num">${q.time}s</span>
+      </div>
+      <div class="timer-track"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
+      <h1 class="question" style="font-size:20px">${esc(q.q)}</h1>
+      <div class="sticky-grid">
+        ${q.options.map((o, i) => `
+          <button class="sticky ${state.myAnswer === i ? "picked" : state.myAnswer !== null ? "dim" : ""}"
+                  style="background:${COLORS[i]}"
+                  ${state.myAnswer !== null ? "disabled" : ""}
+                  onclick="answer(${i})">
+            <span class="sticky-sym">${SYMS[i]}</span>${esc(o)}
+          </button>`).join("")}
+      </div>
+      ${state.myAnswer !== null ? '<p class="muted">Answer locked in — eyes on the host screen…</p>' : ""}`;
+  },
+
+  "player-result"() {
+    const r = state.myResult;
+    return `
+      <div class="eyebrow">Q${state.question.qi + 1} of ${state.question.total}</div>
+      <div class="verdict ${r.correct ? "good" : "bad"}">
+        ${!r.answered ? "Time's up!" : r.correct ? "Correct! +" + r.gained + " pts" : "Not this one — 0 pts"}
+      </div>
+      <div class="card">
+        <p><strong>${r.score}</strong> points · rank <strong>${r.rank}</strong> of ${r.players}</p>
+      </div>
+      <p class="muted">Next question is up to the host…</p>`;
+  },
+
+  "player-podium"() {
+    const p = state.podium;
+    const medals = ["🥇", "🥈", "🥉"];
+    return `
+      <div class="eyebrow">Final result</div>
+      <div class="bigrank">${p.you.rank <= 3 ? medals[p.you.rank - 1] : "#" + p.you.rank}</div>
+      <h1 class="title">${esc(p.you.name)} — ${p.you.score} pts</h1>
+      <div class="card board">
+        <div class="field-label">Top of the room</div>
+        ${p.leaderboard.map((x, i) => `
+          <div class="board-row ${i === 0 ? "leader" : ""}">
+            <span class="board-rank">${medals[i] || i + 1}</span><span class="board-name">${esc(x.name)}</span><span class="board-pts">${x.score}</span>
+          </div>`).join("")}
+      </div>
+      <button class="btn primary wide" onclick="location.reload()">Done</button>`;
+  },
+};
+
+function render() {
+  app.className = "stage";
+  app.innerHTML = views[state.view]();
+}
+render();
+</script>
+</body>
+</html>

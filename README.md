@@ -1,7 +1,22 @@
-# Breakroom Live — Buzzer Mode
+# Breakroom — Games for teams that work together
 
-Kahoot-style multiplayer trivia: the host puts the game on a big screen (or shares it on a call),
-players join from their phones with a 4-letter room code, and the fastest correct answers win.
+The full Breakroom site in one deployable app:
+
+- **`/` (home)** — all six experiences: Quiz Blitz, Who Said It?, Emoji Decode, Poll Battles,
+  Icebreaker Roulette (all pass-and-play in the browser) plus the **Quiz Studio** for building
+  custom packs (saved in the player's browser via localStorage).
+- **`/live`** — **Buzzer Mode**: Kahoot-style multiplayer. The host puts the game on a big screen,
+  players join from their phones with a 4-letter room code, and the fastest correct answers win.
+
+## Editing the pass-and-play games
+
+Source lives in `src/app.jsx`. The compiled bundle (`public/app.js`) is committed, so deploys
+need no build step. After editing the source, rebuild locally and commit the new bundle:
+
+```bash
+npm install
+npm run build
+```
 
 ## How it works
 
